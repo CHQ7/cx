@@ -106,13 +106,32 @@ impl LlmProvider for OpenAiProvider {
     }
 
     async fn is_available(&self) -> bool {
-        // Check if API key is present (either in config or env)
+        // For local models (Ollama, etc), API key is optional
+        // Check if this looks like a local model by examining the base_url
+        let is_local = self.is_local();
+
+        if is_local {
+            return true; // Local models don't require API key
+        }
+
+        // For cloud services, API key is required
         self.config.api_key.is_some()
             || std::env::var("OPENAI_API_KEY").is_ok()
     }
 
     fn default_model(&self) -> &str {
         &self.config.default_model
+    }
+}
+
+impl OpenAiProvider {
+    /// Check if this is a local model provider
+    pub fn is_local(&self) -> bool {
+        let url = self.config.base_url.to_lowercase();
+        url.contains("localhost")
+            || url.contains("127.0.0.1")
+            || url.contains(":11434")  // Ollama
+            || url.contains(":1234")   // LM Studio
     }
 }
 

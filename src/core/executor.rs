@@ -87,11 +87,27 @@ impl LocalExecutor {
                 )))
             }
             ProviderConfig::OpenAi(config) => {
-                let api_key = config
-                    .api_key
-                    .clone()
-                    .or_else(|| std::env::var("OPENAI_API_KEY").ok())
-                    .ok_or_else(|| ExecutorError::Config("OpenAI API key not found".to_string()))?;
+                // For local models (Ollama, LM Studio, etc), API key is optional
+                let is_local = config.base_url.contains("localhost")
+                    || config.base_url.contains("127.0.0.1")
+                    || config.base_url.contains(":11434")  // Ollama
+                    || config.base_url.contains(":1234"); // LM Studio
+
+                let api_key = if is_local {
+                    // Local models: use config key, env key, or empty string
+                    config
+                        .api_key
+                        .clone()
+                        .or_else(|| std::env::var("OPENAI_API_KEY").ok())
+                        .unwrap_or_default()
+                } else {
+                    // Cloud services: require API key
+                    config
+                        .api_key
+                        .clone()
+                        .or_else(|| std::env::var("OPENAI_API_KEY").ok())
+                        .ok_or_else(|| ExecutorError::Config("OpenAI API key not found".to_string()))?
+                };
 
                 Ok(Arc::new(OpenAiSession::new(
                     api_key,
@@ -257,20 +273,82 @@ impl Default for LocalExecutor {
     }
 }
 
-/// Load tools schema from assets
+/// Load tools schema - inline definition to avoid external file dependency
 fn load_tools_schema() -> Vec<ToolSchema> {
-    let schema_path = crate::utils::assets_dir().join("tools_schema.json");
-
-    if !schema_path.exists() {
-        return vec![];
-    }
-
-    let content = std::fs::read_to_string(&schema_path).unwrap_or_default();
-    if content.is_empty() {
-        return vec![];
-    }
-
-    serde_json::from_str(&content).unwrap_or_default()
+    vec![
+        ToolSchema {
+            name: "file_write".to_string(),
+            description: "Write content to a file".to_string(),
+            parameters: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Path to the file to write"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Content to write to the file"
+                    }
+                },
+                "required": ["path", "content"]
+            }),
+        },
+        ToolSchema {
+            name: "file_read".to_string(),
+            description: "Read content from a file".to_string(),
+            parameters: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Path to the file to read"
+                    }
+                },
+                "required": ["path"]
+            }),
+        },
+        ToolSchema {
+            name: "file_patch".to_string(),
+            description: "Apply a patch to a file".to_string(),
+            parameters: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Path to the file to patch"
+                    },
+                    "old_string": {
+                        "type": "string",
+                        "description": "String to search for"
+                    },
+                    "new_string": {
+                        "type": "string",
+                        "description": "Replacement string"
+                    }
+                },
+                "required": ["path", "old_string", "new_string"]
+            }),
+        },
+        ToolSchema {
+            name: "code_run".to_string(),
+            description: "Execute code or shell command".to_string(),
+            parameters: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "language": {
+                        "type": "string",
+                        "description": "Programming language or 'shell'"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "Code to execute"
+                    }
+                },
+                "required": ["language", "code"]
+            }),
+        },
+    ]
 }
 
 #[cfg(test)]

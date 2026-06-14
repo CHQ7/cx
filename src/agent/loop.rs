@@ -80,9 +80,18 @@ impl AgentLoop {
             let mut exit_reason = None;
 
             for tc in tool_calls {
+                // Handle no_tool case - model didn't call any tool, meaning task is done
+                if tc.tool_name == "no_tool" {
+                    exit_reason = Some(ExitReason::CurrentTaskDone { data: None });
+                    break;
+                }
+
+                // Normalize tool name for common aliases
+                let tool_name = normalize_tool_name(&tc.tool_name);
+
                 let handler = tools
                     .iter()
-                    .find(|t| t.name() == tc.tool_name)
+                    .find(|t| t.name() == tool_name)
                     .ok_or_else(|| AgentError::ToolError(format!("unknown tool: {}", tc.tool_name)))?;
 
                 let outcome = handler
@@ -164,4 +173,16 @@ pub enum AgentError {
     LlmError(String),
     #[error("Tool error: {0}")]
     ToolError(String),
+}
+
+/// Normalize tool name to handle common aliases
+fn normalize_tool_name(name: &str) -> &str {
+    match name {
+        "write_to_file" | "write_file" | "create_file" => "file_write",
+        "read_file" | "get_file" | "file_read_tool" => "file_read",
+        "patch" | "edit_file" | "modify_file" => "file_patch",
+        "run" | "execute" | "shell" => "code_run",
+        "ask" | "question" => "ask_user",
+        _ => name,
+    }
 }

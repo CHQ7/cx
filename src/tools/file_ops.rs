@@ -21,6 +21,9 @@ impl ToolHandler for FileReadTool {
         context: &mut ToolContext,
     ) -> Result<StepOutcome, ToolError> {
         let path_str = args.get("path")
+            .or_else(|| args.get("file_path"))
+            .or_else(|| args.get("filepath"))
+            .or_else(|| args.get("filename"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("path required".to_string()))?;
 
@@ -53,12 +56,21 @@ impl ToolHandler for FilePatchTool {
         context: &mut ToolContext,
     ) -> Result<StepOutcome, ToolError> {
         let path_str = args.get("path")
+            .or_else(|| args.get("file_path"))
+            .or_else(|| args.get("filepath"))
+            .or_else(|| args.get("filename"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("path required".to_string()))?;
         let old_content = args.get("old_content")
+            .or_else(|| args.get("old"))
+            .or_else(|| args.get("old_string"))
+            .or_else(|| args.get("search"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("old_content required".to_string()))?;
         let new_content = args.get("new_content")
+            .or_else(|| args.get("new"))
+            .or_else(|| args.get("new_string"))
+            .or_else(|| args.get("replace"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("new_content required".to_string()))?;
 
@@ -88,10 +100,17 @@ impl ToolHandler for FileWriteTool {
         args: Value,
         context: &mut ToolContext,
     ) -> Result<StepOutcome, ToolError> {
+        // Support multiple parameter name variants
         let path_str = args.get("path")
+            .or_else(|| args.get("file_path"))
+            .or_else(|| args.get("filepath"))
+            .or_else(|| args.get("filename"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("path required".to_string()))?;
         let content = args.get("content")
+            .or_else(|| args.get("contents"))
+            .or_else(|| args.get("text"))
+            .or_else(|| args.get("data"))
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidArgs("content required".to_string()))?;
         let mode = args.get("mode")

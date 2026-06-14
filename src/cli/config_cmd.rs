@@ -6,6 +6,9 @@ use crate::config::provider::{ClaudeProvider, OpenAiProvider};
 /// 配置管理子命令
 #[derive(Subcommand, Debug)]
 pub enum ConfigCommands {
+    /// 初始化配置文件（如果不存在则创建）
+    Init,
+
     /// 列出所有配置的 provider
     List,
 
@@ -35,7 +38,7 @@ pub fn create_example_config() -> String {
 
 [global]
 # 默认使用的 provider
-default_provider = "claude"
+default_provider = "local"
 # 日志级别: trace, debug, info, warn, error
 log_level = "info"
 # 请求超时时间（秒）
@@ -43,41 +46,70 @@ timeout_seconds = 60
 # 调试模式
 debug = false
 
-# Claude Provider 配置
+# =============================================================================
+# 本地模型配置 (OpenAI 兼容 API)
+# 适用于: Ollama, LM Studio, text-generation-webui, 以及任何 OpenAI 兼容 API
+# =============================================================================
+[providers.local]
+type = "openai"
+# API Key (本地模型通常不需要，但某些服务可能需要)
+# 可以通过环境变量 OPENAI_API_KEY 设置，或在这里留空/设置占位符
+api_key = ""
+# 本地 API 基础 URL
+# Ollama 默认: http://localhost:11434/v1
+# LM Studio 默认: http://localhost:1234/v1
+# 自定义服务: http://172.29.16.224:26398/v1
+base_url = "http://172.29.16.224:26398/v1"
+# 模型名称
+# Ollama 示例: llama3.1, qwen2.5, deepseek-coder-v2
+# 您的服务: qwen3.6-27b
+default_model = "qwen3.6:27b"
+# 最大生成 token 数
+max_tokens = 4096
+# 温度 (0.0 - 1.0)
+temperature = 0.7
+
+# =============================================================================
+# Claude Provider 配置 (Anthropic API)
+# =============================================================================
 [providers.claude]
 type = "claude"
 # API Key (也可以通过 ANTHROPIC_API_KEY 环境变量设置)
-api_key = "your-anthropic-api-key-here"
+api_key = ""
 # API 基础 URL
 base_url = "https://api.anthropic.com"
-# 默认模型
+# 默认模型: claude-opus-4, claude-sonnet-4, claude-haiku-4
 default_model = "claude-sonnet-4-20250514"
 # 最大生成 token 数
 max_tokens = 8192
 # 温度 (0.0 - 1.0)
 temperature = 0.7
 
+# =============================================================================
 # OpenAI Provider 配置
+# =============================================================================
 [providers.openai]
 type = "openai"
 # API Key (也可以通过 OPENAI_API_KEY 环境变量设置)
-api_key = "your-openai-api-key-here"
+api_key = ""
 # API 基础 URL
 base_url = "https://api.openai.com"
-# 默认模型
+# 默认模型: gpt-4o, gpt-4-turbo, gpt-3.5-turbo
 default_model = "gpt-4o"
 # 最大生成 token 数
 max_tokens = 8192
 # 温度 (0.0 - 1.0)
 temperature = 0.7
 
-# Mixin Provider 配置 (组合多个 provider)
-[providers.mixin]
+# =============================================================================
+# Mixin Provider 配置 (组合多个 provider，支持故障转移和负载均衡)
+# =============================================================================
+[providers.backup]
 type = "mixin"
 # 策略: fallback (故障转移), round_robin (轮询), weighted_round_robin (加权轮询)
 strategy = "fallback"
-# 包含的 provider 列表
-providers = ["claude", "openai"]
+# 包含的 provider 列表（按优先级排序）
+providers = ["local", "claude", "openai"]
 "#.to_string()
 }
 
@@ -104,14 +136,39 @@ pub async fn handle_config_command(
     command: ConfigCommands,
     config_path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // 确保配置文件存在
-    ensure_config_exists(config_path).await?;
+    match command {
+        ConfigCommands::Init => {
+            // 初始化配置文件
+            if config_path.exists() {
+                println!("配置文件已存在: {}", config_path.display());
+                println!("使用 'cx config show' 查看当前配置");
+            } else {
+                ensure_config_exists(config_path).await?;
+                println!("\n提示: 请编辑配置文件设置您的 API Key:");
+                println!("  {}", config_path.display());
+                println!("\n本地模型用户: 修改 providers.local 部分");
+                println!("Claude 用户: 修改 providers.claude 部分");
+                println!("OpenAI 用户: 修改 providers.openai 部分");
+            }
+            return Ok(());
+        }
+
+        _ => {
+            // 其他命令需要配置文件存在
+            ensure_config_exists(config_path).await?;
+        }
+    }
 
     // 加载配置
     let config_manager = ConfigManager::new();
     config_manager.load_from_file(config_path).await?;
 
     match command {
+        ConfigCommands::Init => {
+            // 已在上面处理，不会执行到这里
+            return Ok(());
+        }
+
         ConfigCommands::List => {
             let providers = config_manager.get_provider_names().await;
             let default_provider = config_manager
