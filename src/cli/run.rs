@@ -114,7 +114,15 @@ pub async fn handle_run_command(args: RunArgs) -> Result<(), Box<dyn std::error:
                 crate::agent::r#loop::ExitReason::Exited { data } |
                 crate::agent::r#loop::ExitReason::CurrentTaskDone { data } => {
                     if let Some(data) = data {
-                        println!("{}", serde_json::to_string_pretty(data)?);
+                        // Print the content cleanly
+                        match data {
+                            serde_json::Value::String(s) => {
+                                println!("{}", s);
+                            }
+                            other => {
+                                println!("{}", serde_json::to_string_pretty(other)?);
+                            }
+                        }
                     }
                 }
                 crate::agent::r#loop::ExitReason::MaxTurnsExceeded => {

@@ -56,6 +56,16 @@ impl AgentLoop {
 
             // Parse tool calls
             let tool_calls = if response.tool_calls.is_empty() {
+                // No tool calls - model responded with text
+                // Return the content as the result
+                if !response.content.is_empty() {
+                    return Ok(RunResult {
+                        reason: ExitReason::CurrentTaskDone {
+                            data: Some(serde_json::Value::String(response.content.clone())),
+                        },
+                        turns: turn,
+                    });
+                }
                 vec![ToolCall {
                     tool_name: "no_tool".to_string(),
                     args: serde_json::json!({}),
