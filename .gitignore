@@ -1,0 +1,8 @@
+# IDE
+.idea/
+
+# Rust build output
+target/
+
+# Worktrees
+.worktrees/
