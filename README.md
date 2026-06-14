@@ -1,52 +1,33 @@
-# CX - 开发文档管理
+# cx —— 终端优先的自主 AI Agent 执行系统
 
-CX 是一个通用的开发文档管理体系，用于规划、跟踪和记录软件开发的迭代过程。
+`cx` 是一个用 Rust 编写的**终端优先、可自我进化**的 AI Agent。它只给你一个命令行界面（CLI）和 TUI（文本用户界面），不依赖浏览器或 Web 服务，专为开发者、运维人员、自动化爱好者在**纯终端环境**下使用而设计。
 
-## 核心理念
+> 项目处于 **MVP 开发阶段**，遵循分阶段交付。当前代码库已完成模块骨架和部分工具抽象，核心执行循环、TUI、技能固化等功能正在逐步实现中。
 
-遵循 **设计 → 开发 → 验证 → 反思 → 改进** 的闭环迭代流程。
+## ✨ 设计目标
 
-## 适用场景
+- **终端优先**：所有交互通过 TUI 或单次 CLI 命令完成，完全支持 SSH 远程使用。
+- **极低资源占用**：空闲内存 < 50 MB，启动时间 < 100 ms。
+- **自我进化**：成功执行的任务路径会被自动固化为可复用的技能（Skill），下次遇到类似任务时直接调用，无需重复消耗 LLM tokens。
+- **单二进制部署**：无 Python、Node.js 等运行时依赖，一个文件即可运行。
+- **跨平台**：支持 Windows、macOS、Linux。
 
-- 独立跟踪多个项目的开发迭代
-- 文档与代码分离，便于并行管理
-- 团队知识沉淀与复盘
+## 🧠 架构概览
 
-## 文档结构
+`cx` 遵循 GenericAgent 的极简四层记忆系统（L0 人格，L1 会话，L2 用户，L3 技能）和 9 个原子工具。其核心循环仅约 150 行代码，通过 LLM 驱动工具调用完成任务。
 
-```
-docs/superpowers/
-├── specs/          # 架构设计文档
-├── plans/          # 开发计划与任务清单
-├── reviews/        # 代码审查与验证记录
-├── iterations/     # 迭代总结与经验教训
-└── improvements/   # 优化改进计划
-```
+> 📘 详细设计请参见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## 快速开始
+## 🚀 快速开始（当前可用部分）
 
-1. **新建设计文档**：`docs/superpowers/specs/YYYY-MM-DD-<name>-design.md`
-2. **制定开发计划**：`docs/superpowers/plans/YYYY-MM-DD-<name>.md`
-3. **记录迭代总结**：`docs/superpowers/iterations/YYYY-MM-DD-<iteration>-summary.md`
+### 安装
 
-## 文档命名规范
+```bash
+# 克隆仓库
+git clone https://github.com/CHQ7/cx.git
+cd cx
 
-| 类型 | 格式 | 示例 |
-|------|------|------|
-| 设计文档 | `YYYY-MM-DD-<name>-design.md` | `2026-06-14-api-gateway-design.md` |
-| 开发计划 | `YYYY-MM-DD-<name>.md` | `2026-06-14-api-gateway.md` |
-| 验证记录 | `YYYY-MM-DD-<name>-review.md` | `2026-06-14-api-gateway-review.md` |
-| 迭代总结 | `YYYY-MM-DD-<iteration>-summary.md` | `2026-06-14-sprint1-summary.md` |
-| 改进计划 | `YYYY-MM-DD-<improvement>.md` | `2026-06-14-performance.md` |
+# 构建 release 版本
+cargo build --release
 
-## 使用指南
-
-详见 `.claude/工作流程.md`
-
-## 关联项目
-
-本文档可与任意代码仓库配合使用，通过路径或链接建立关联。
-
-示例：
-- 文档仓库：`E:/work/cx`
-- 代码仓库：`E:/work/GA2`
+# 二进制文件位于 target/release/cx
