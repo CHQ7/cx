@@ -1,8 +1,8 @@
-// Integration tests for ga-core
+// Integration tests for cx
 // Verifies the library compiles and basic types work correctly
 
-use ga_core::llm::models::{Role, Message, ContentBlock};
-use ga_core::agent::outcome::{StepOutcome, ToolCall};
+use cx::llm::models::{Role, Message, ContentBlock};
+use cx::agent::outcome::{StepOutcome, ToolCall};
 
 #[test]
 fn test_library_compiles() {

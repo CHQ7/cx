@@ -70,6 +70,17 @@ max_tokens = 4096
 temperature = 0.7
 
 # =============================================================================
+# 易用 AI Claude 配置 (cloud.yiyongai.cn)
+# =============================================================================
+[providers.yiyong]
+type = "claude"
+api_key = "sk-Tzb2Cv0rEDiRRPwNiF9RNKDydjeJNstyIKc3BTb1LmLqhhHO"
+base_url = "https://cloud.yiyongai.cn"
+default_model = "claude-opus-4-8"
+max_tokens = 8192
+temperature = 0.7
+
+# =============================================================================
 # Claude Provider 配置 (Anthropic API)
 # =============================================================================
 [providers.claude]

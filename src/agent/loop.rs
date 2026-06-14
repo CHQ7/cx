@@ -189,8 +189,8 @@ pub enum AgentError {
 fn normalize_tool_name(name: &str) -> &str {
     match name {
         "write_to_file" | "write_file" | "create_file" => "file_write",
-        "read_file" | "get_file" | "file_read_tool" => "file_read",
-        "patch" | "edit_file" | "modify_file" => "file_patch",
+        "read_file" | "get_file" | "file_read_tool" | "file_reader" | "read" => "file_read",
+        "patch" | "edit_file" | "modify_file" | "patch_file" | "replace" => "file_patch",
         "run" | "execute" | "shell" => "code_run",
         "ask" | "question" => "ask_user",
         _ => name,
