@@ -90,6 +90,19 @@ impl AgentLoop {
                     .await
                     .map_err(|e| AgentError::ToolError(e.to_string()))?;
 
+                // Always capture tool result before checking exit conditions
+                if let Some(id) = &tc.id {
+                    let content = match &outcome.data {
+                        Some(serde_json::Value::String(s)) => s.clone(),
+                        Some(other) => other.to_string(),
+                        None => "null".to_string(),
+                    };
+                    tool_results.push(ToolResult {
+                        tool_use_id: id.clone(),
+                        content,
+                    });
+                }
+
                 if outcome.should_exit {
                     exit_reason = Some(ExitReason::Exited {
                         data: outcome.data,
@@ -106,19 +119,6 @@ impl AgentLoop {
 
                 if let Some(prompt) = outcome.next_prompt {
                     next_prompts.push(prompt);
-                }
-
-                if let Some(data) = &outcome.data {
-                    if let Some(id) = &tc.id {
-                        let content = match data {
-                            serde_json::Value::String(s) => s.clone(),
-                            other => other.to_string(),
-                        };
-                        tool_results.push(ToolResult {
-                            tool_use_id: id.clone(),
-                            content,
-                        });
-                    }
                 }
             }
 
