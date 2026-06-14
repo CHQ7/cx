@@ -1,8 +1,8 @@
 use clap::Parser;
-use ga_core::cli::{Cli, Commands, default_config_path, init_tracing};
-use ga_core::cli::config_cmd;
-use ga_core::cli::run;
-use ga_core::cli::server;
+use cx::cli::{Cli, Commands, default_config_path, init_tracing};
+use cx::cli::config_cmd;
+use cx::cli::run;
+use cx::cli::server;
 use std::path::PathBuf;
 
 #[tokio::main]

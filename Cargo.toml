@@ -1,10 +1,18 @@
 [package]
-name = "ga-core"
+name = "cx"
 version = "0.1.0"
 edition = "2021"
-authors = ["GenericAgent Team"]
-description = "Core engine for GenericAgent - Rust replacement for agent_loop.py, ga.py, and llmcore.py"
+authors = ["CX Team"]
+description = "CX - AI Agent CLI with local and server modes"
 license = "MIT"
+
+[[bin]]
+name = "cx"
+path = "src/main.rs"
+
+[lib]
+name = "cx"
+path = "src/lib.rs"
 
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }
